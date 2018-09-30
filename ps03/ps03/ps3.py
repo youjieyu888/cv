@@ -133,16 +133,15 @@ def find_markers(image, template=None):
     all_pts[:, [0, 1]] = all_pts[:, [1, 0]]
     all_pts = np.array(all_pts)
     all_pts = np.float32(all_pts)  # kmeans can only pass float32
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
-    ret, label, center = cv2.kmeans(all_pts, 4, criteria, 20,
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 40, 1.0)
+    ret, label, center = cv2.kmeans(all_pts, 4, criteria, 40,
                                     cv2.KMEANS_RANDOM_CENTERS)  # 4 is num of cluster, 10 is attempts
 
     if center is None:
         return None
     center = np.round(center)
-    #print center
+    center = center.astype(int)
     ans=sort_4(center)
-    #print ans
     #print ans
     return ans
 
@@ -164,7 +163,6 @@ def draw_box(image, markers, thickness=1):
         numpy.array: image with lines drawn.
     """
     img=np.copy(image)
-    #print markers
     cv2.line(img, markers[0], markers[1], (255, 0, 0), thickness)
     cv2.line(img, markers[0], markers[2], (255, 0, 0), thickness)
     cv2.line(img, markers[3], markers[1], (255, 0, 0), thickness)
@@ -191,13 +189,14 @@ def project_imageA_onto_imageB(imageA, target_img, homography):
     inv_homo = np.linalg.inv(homography)
     inv_homo = inv_homo.astype('float32')
     map1 = np.fromfunction(lambda j, i: (inv_homo[0, 0] * i + inv_homo[0, 1] * j + inv_homo[0, 2]) / (
-                inv_homo[2, 0] + inv_homo[2, 1] + inv_homo[2, 2]), (imageB.shape[0], imageB.shape[1]))
+                inv_homo[2, 0] * i + inv_homo[2, 1] * j + inv_homo[2, 2]), (imageB.shape[0], imageB.shape[1]))
     map2 = np.fromfunction(lambda j, i: (inv_homo[1, 0] * i + inv_homo[1, 1] * j + inv_homo[1, 2]) / (
-                inv_homo[2, 0] + inv_homo[2, 1] + inv_homo[2, 2]), (imageB.shape[0], imageB.shape[1]))
+                inv_homo[2, 0] * i + inv_homo[2, 1] * j + inv_homo[2, 2]), (imageB.shape[0], imageB.shape[1]))
     map1 = map1.astype('float32')
     map2 = map2.astype('float32')
     imageB = cv2.remap(imageA, map1, map2, interpolation=cv2.INTER_LINEAR, dst=imageB,
                        borderMode=cv2.BORDER_TRANSPARENT)
+    imageB=np.round(imageB)
     return imageB
 
 def find_four_point_transform(src_points, dst_points):
