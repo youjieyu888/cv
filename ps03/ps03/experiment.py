@@ -267,17 +267,55 @@ def part_6():
     fps = 40
 
     # Todo: Complete this part on your own.
+    base_video = os.path.join(VID_DIR, video_file)
+    image_gen= ps3.video_frame_generator(base_video)
+    image = image_gen.next()
+    h, w, d = image.shape
 
+    my_video = os.path.join(VID_DIR, my_video)
+    my_image_gen = ps3.video_frame_generator(my_video)
+    my_image = my_image_gen.next()
+
+    out_path = "output/ar_{}-{}.avi".format("ps3-6", video_file)
+    video_out = mp4_video_writer(out_path, (w, h), fps)
+    output_counter = 1
+    frame_num = 1
+
+    src_points = ps3.get_corners_list(my_image)
+    while image is not None:
+
+        print "Processing frame {}".format(frame_num)
+
+        markers = ps3.find_markers(image, None)
+
+        homography = ps3.find_four_point_transform(src_points, markers)
+        image = ps3.project_imageA_onto_imageB(my_image, image, homography)
+
+        frame_id = frame_ids[(output_counter - 1) % 3]
+
+        if frame_num == frame_id:
+            out_str = "ps3-6" + "-{}.png".format(output_counter)
+            save_image(out_str, image)
+            output_counter += 1
+
+        video_out.write(image)
+
+        image = image_gen.next()
+        my_image = my_image_gen.next()
+
+        frame_num += 1
+
+    video_out.release()
 
 if __name__ == '__main__':
     print "--- Problem Set 3 ---"
     # Comment out the sections you want to skip
 
-    #part_1()
-    #part_2()
-    #part_3()
-    #part_4_a()
-    #part_4_b()
-    #part_5_a()
-    #part_5_b()
-    #part_6()
+    # part_1()
+    # part_2()
+    # part_3()
+    # part_4_a()
+    # part_4_b()
+    # part_5_a()
+    # part_5_b()
+    part_6()
